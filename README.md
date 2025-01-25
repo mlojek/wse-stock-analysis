@@ -7,3 +7,12 @@ We propose that buing stocks that dropped more than 8% in one day is a good and 
 ## Dataset:
 We're using [this](https://www.kaggle.com/datasets/hadzio/warsaw-stock-exchage-onbalance-volume-obv) dataset from kaggle. It contains information about open, close, low and high prices for each stock for each trading day. We'll limit our tests to years 2010-2018, to exclude major global recessions.
 
+## How to run
+Firstly, make sure you have all the necessary libraries installed. In your R interpreter run:
+```
+source('install.r')
+```
+Download the dataset and move the CSV file to this directory. Rename it to `stock_data.csv`. Then in R interpreter run:
+```
+source('main.r')
+```
