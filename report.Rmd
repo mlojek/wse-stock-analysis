@@ -2,24 +2,51 @@
 title: Czy warto kupić akcje spółki, które w ciągu dnia straciły na wartości ponad
   osiem procent? Przedmiotem analizy są spółki notowane na Warszawskiej Giełdzie Papierów
   Wartościowych.
+author: 
+- Katarzyna Zaleska
+- Marcin Łojek
 output:
   pdf_document: default
 ---
 
-Wybrany zbiór danych **Warsaw Stock Exchange - On-Balance Volume**.
+Wybrany zbiór danych **Warsaw Stock Exchange - On-Balance Volume**. Domyślnie zbiór danych zawiera informacje o dziennych cenach 1622 różnych instrumentów finansowych notowanych na GPW.
 
 ```{r}
 library('lubridate')
 ```
+
+Początkowo odczytano dane pobrane bezpośrednio z platformy Kaggle.
 
 ```{r}
 # read stock data from csv file
 stock_data <- read.csv('stock_data.csv', header=TRUE, dec='.')
 ```
 
-Powyższy zbiór został przetworzony. Wykonano następujące kroki:
+Wybrany zbiór składa się z 8 kolumn:
 
--   **Wybranie przedziału lat 2010-2018**
+-   **INSTRUMENT** - symbol giełdowy akcji/instrumentu
+
+-   **TRADING_DATE** - data notowania akcji
+
+-   **OPEN_VAL_PLN** - cena akcji na otwarciu rynku
+
+-   **CLOSE_VAL_PLN** - cena akcji na zamknięciu rynku
+
+-   **HIGH_VAL_PLN** - najwyższa cena akcji w ciągu danego dnia
+
+-   **LOW_VAL_PLN** - najniższa cena akcji w ciągu danego dnia
+
+-   **VOLUME** - liczba akcji sprzedanych w danym dniu
+
+-   **OP_OBV** - wartość wskaźnika On-Balance Volume
+
+```{r}
+head(stock_data)
+```
+
+Powyższy zbiór został następnie przetworzony. Wykonano następujące kroki:
+
+-   **Wybranie przedziału lat 2010-2018** (pierwotny zbiór obejmuje okres od stycznia 1991 roku do stycznia 2019 roku)
 
 ```{r}
 # get only values from years 2010-2018
@@ -28,7 +55,7 @@ stock_data <- stock_data[
     year(stock_data$TRADING_DATE) <= 2018, ]
 ```
 
--   Usunięto nieużywane kolumny
+-   Usunięcie nieużywanych dalej kolumn
 
 ```{r}
 # remove unnecessary columns
@@ -70,9 +97,9 @@ stock_data$PERCENT_CHANGE <- ave(
 write.csv(stock_data, "preprocessed_data.csv", row.names = FALSE)
 ```
 
--   **Dodanie kolumn MAX_1_DAY_AHEAD, MAX_5_DAYS_AHEAD** oraz \
-    **MAX_10_DAYS_AHEAD** oznaczających maksymalną cena w ciągu 1/5/10 dniu po dniu spadku. \
-    Odpowiednio dodano również **PERCENT_CHANGE_1_DAY, \
+-   **Dodanie kolumn MAX_1_DAY_AHEAD, MAX_5_DAYS_AHEAD** oraz\
+    **MAX_10_DAYS_AHEAD** oznaczających maksymalną cena w ciągu 1/5/10 dniu po dniu spadku.\
+    Odpowiednio dodano również **PERCENT_CHANGE_1_DAY,\
     PERCENT_CHANGE_5_DAYS** oraz **PERCENT_CHANGE_10_DAYS** oznaczające procentową zmianę względem ceny na zamknieciu w dniu spadku
 
 ```{r}
@@ -114,12 +141,6 @@ stock_data <- do.call(rbind, lapply(
 write.csv(stock_data, "preprocessed_data_rise.csv", row.names = FALSE)
 ```
 
-Ostatecznie przygotowane dane:
-
-```{r}
-head(stock_data)
-```
-
 Następnie sprawdzono liczbę wierszy dla każdej z wybranych spółek.
 
 ```{r}
@@ -136,7 +157,7 @@ Po przygotowaniu danych, zidentyfikowaliśmy dni, w których spadek akcji osiąg
 filtered_by_decrease <- stock_data[stock_data$PERCENT_CHANGE < -8, ]
 ```
 
-Wykonaliśmy **test Shapiro-Wilka** odpowiednio dla kolumn MAX_1_DAY_AHEAD, \
+Wykonaliśmy **test normalności Shapiro-Wilka** odpowiednio dla kolumn MAX_1_DAY_AHEAD,\
 MAX_5_DAYS_AHEAD oraz MAX_10_DAYS_AHEAD.
 
 ```{r}
@@ -154,7 +175,9 @@ shapiro_10_day <- shapiro.test(filtered_by_decrease$MAX_10_DAYS_AHEAD)
 print(shapiro_10_day)
 ```
 
-W każdym przypadku rozkład jest inny niż normalny. W związku z tym wykonano **test Wilcoxona**. Dla każdego z wybranych okresów możemy sformułować hipotezę **H0 - średnia procentowych zmian cen akcji po dniu spadku w wybranym okresie jest mniejsza lub równa zero**. **Hipoteza alternatywna zakłada, że średnia cena jest dodatnia.**
+W każdym przypadku rozkład jest inny niż normalny.
+
+W związku z powyższym wykonano **test Wilcoxona**. Dla każdego z wybranych okresów możemy sformułować hipotezę **H0 - średnia procentowych zmian cen akcji po dniu spadku w wybranym okresie jest mniejsza lub równa zero**. **Hipoteza alternatywna zakłada, że średnia cena jest dodatnia.**
 
 ```{r}
 wilcox_result_1_day <- wilcox.test(filtered_by_decrease$PERCENT_CHANGE_1_DAY, 
@@ -174,4 +197,4 @@ wilcox_result_10_days <- wilcox.test(filtered_by_decrease$PERCENT_CHANGE_10_DAYS
 print(wilcox_result_10_days)
 ```
 
-Na podstawie **testu Wilcoxona** odrzucona została hipoteza zerowa. W związku z tym przyjęto hipotezę alternatywną - w przeciągu wybranego okresu 1/5/10 dni zazwyczaj następuje wzrost cen akcji. Warto kupić akcję, których ceny jednego dnia spadły o ponad osiem procent.
+Na podstawie **testu Wilcoxona** odrzucona została hipoteza zerowa. W związku z tym przyjęto hipotezę alternatywną - w przeciągu wybranego okresu 1/5/10 dni zazwyczaj następuje wzrost cen akcji. Warto kupić akcję, których ceny jednego dnia spadły o ponad osiem procent ponieważ można potem zaoobserwować wzrost.
